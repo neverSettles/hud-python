@@ -72,8 +72,8 @@ class FastMCPHUDClient(BaseHUDClient):
             logger.warning("Client is already connected, cannot connect again")
             return
 
-        # Create FastMCP client with the custom transport
-        timeout = 10 * 60  # 5 minutes
+        # Use 2-hour timeout to allow long-running tasks to complete
+        timeout = 2 * 60 * 60  # 2 hours = 7200 seconds
         os.environ["FASTMCP_CLIENT_INIT_TIMEOUT"] = str(timeout)
 
         # Create custom transport with retry support for HTTP servers
