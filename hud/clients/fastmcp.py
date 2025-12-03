@@ -73,7 +73,8 @@ class FastMCPHUDClient(BaseHUDClient):
             return
 
         # Create FastMCP client with the custom transport
-        timeout = 10 * 60  # 5 minutes
+        # Use 2-hour timeout to allow long-running tasks to complete
+        timeout = 60 * 60 * 2  # 2 hours
         os.environ["FASTMCP_CLIENT_INIT_TIMEOUT"] = str(timeout)
 
         # Create custom transport with retry support for HTTP servers

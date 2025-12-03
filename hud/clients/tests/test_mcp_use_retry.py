@@ -374,5 +374,71 @@ class TestMCPUseClientRetry:
             assert result.contents[0].text == '{"status": "ok"}'  # type: ignore
 
 
+class TestSSEReadTimeout:
+    """Test SSE read timeout configuration."""
+
+    def test_default_sse_read_timeout_constant(self):
+        """Test that default SSE read timeout is set to 2 hours."""
+        assert MCPUseHUDClient.DEFAULT_SSE_READ_TIMEOUT == 60 * 60 * 2  # 2 hours (7200 seconds)
+
+    @pytest.mark.asyncio
+    async def test_sse_read_timeout_injected_when_not_specified(self):
+        """Test that sse_read_timeout is injected into server config when not specified."""
+        config = {"test_server": {"url": "http://localhost:8080"}}
+        client = MCPUseHUDClient(config)
+
+        with patch("hud.clients.mcp_use.MCPUseClient") as MockMCPUseClient:
+            mock_client = Mock()
+            MockMCPUseClient.from_dict.return_value = mock_client
+
+            # Create mock session
+            mock_session = Mock()
+            mock_session.connector = Mock()
+            mock_session.connector.client_session = Mock()
+            mock_session.connector.client_session.list_tools = AsyncMock(
+                return_value=Mock(tools=[])
+            )
+
+            mock_client.create_all_sessions = AsyncMock(return_value={"test_server": mock_session})
+
+            # Initialize client
+            await client.initialize()
+
+            # Verify the sse_read_timeout was added to the config
+            call_args = MockMCPUseClient.from_dict.call_args
+            config_passed = call_args[0][0]
+            assert "sse_read_timeout" in config_passed["mcpServers"]["test_server"]
+            assert config_passed["mcpServers"]["test_server"]["sse_read_timeout"] == 7200
+
+    @pytest.mark.asyncio
+    async def test_sse_read_timeout_not_overridden_when_specified(self):
+        """Test that user-specified sse_read_timeout is not overridden."""
+        custom_timeout = 3600  # 1 hour
+        config = {"test_server": {"url": "http://localhost:8080", "sse_read_timeout": custom_timeout}}
+        client = MCPUseHUDClient(config)
+
+        with patch("hud.clients.mcp_use.MCPUseClient") as MockMCPUseClient:
+            mock_client = Mock()
+            MockMCPUseClient.from_dict.return_value = mock_client
+
+            # Create mock session
+            mock_session = Mock()
+            mock_session.connector = Mock()
+            mock_session.connector.client_session = Mock()
+            mock_session.connector.client_session.list_tools = AsyncMock(
+                return_value=Mock(tools=[])
+            )
+
+            mock_client.create_all_sessions = AsyncMock(return_value={"test_server": mock_session})
+
+            # Initialize client
+            await client.initialize()
+
+            # Verify the user's sse_read_timeout was preserved
+            call_args = MockMCPUseClient.from_dict.call_args
+            config_passed = call_args[0][0]
+            assert config_passed["mcpServers"]["test_server"]["sse_read_timeout"] == custom_timeout
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
