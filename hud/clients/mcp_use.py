@@ -65,10 +65,10 @@ class MCPUseHUDClient(BaseHUDClient):
             disable_sse_fallback=True,
         )
 
-    # Default timeout for SSE read operations (2 hours in seconds).
+    # Default timeout for SSE read operations (2 hours).
     # This allows long-running tasks to complete without timing out.
     # Can be overridden by setting "sse_read_timeout" in the server config.
-    DEFAULT_SSE_READ_TIMEOUT = 60 * 60 * 2  # 2 hours
+    DEFAULT_SSE_READ_TIMEOUT = 2 * 60 * 60  # 2 hours = 7200 seconds
 
     async def _connect(self, mcp_config: dict[str, dict[str, Any]]) -> None:
         """Create all sessions for MCP-use client."""
